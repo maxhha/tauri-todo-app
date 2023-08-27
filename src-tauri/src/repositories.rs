@@ -71,6 +71,12 @@ impl ports::ProjectRepository for InMemoryProjectRepository {
 
         Ok(item.cloned().map(Into::into))
     }
+
+    async fn list(&self) -> Result<Vec<models::Project>> {
+        let projects = self.projects.read().await;
+
+        Ok(projects.iter().cloned().map(Into::into).collect())
+    }
 }
 
 #[cfg(test)]
@@ -132,5 +138,22 @@ mod tests {
         let project_from_repo = repo.get(project.id).await.expect("Failed to get project");
 
         assert_eq!(project_from_repo, Some(project));
+    }
+
+    #[tokio::test]
+    async fn list_returns_all_projects() {
+        let repo = Arc::new(InMemoryProjectRepository::new());
+        let names = vec!["First", "Second", "Third"];
+
+        for name in names.iter() {
+            repo.create(CreateProjectData { name })
+                .await
+                .expect("Failed create project");
+        }
+
+        let projects = repo.list().await.expect("Failed list projects");
+        let project_names = projects.into_iter().map(|p| p.name).collect::<Vec<_>>();
+
+        assert_eq!(names, project_names);
     }
 }

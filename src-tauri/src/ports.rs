@@ -10,4 +10,5 @@ pub struct CreateProjectData<'a> {
 pub trait ProjectRepository: Sync {
     async fn create(&self, project: CreateProjectData<'_>) -> Result<Project>;
     async fn get(&self, id: u64) -> Result<Option<Project>>;
+    async fn list(&self) -> Result<Vec<Project>>;
 }
