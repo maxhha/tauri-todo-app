@@ -8,8 +8,7 @@ function App() {
   const [name, setName] = useState("");
 
   async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-    setGreetMsg(await invoke("greet", { name }));
+    setGreetMsg(await invoke("create_project", { name }));
   }
 
   return (
@@ -45,7 +44,7 @@ function App() {
         <button type="submit">Greet</button>
       </form>
 
-      <p>{greetMsg}</p>
+      <pre>{JSON.stringify(greetMsg, null, 2)}</pre>
     </div>
   );
 }

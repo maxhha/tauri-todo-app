@@ -29,7 +29,7 @@ impl Into<models::Project> for Project {
     }
 }
 
-struct InMemoryProjectRepository {
+pub struct InMemoryProjectRepository {
     projects: RwLock<Vec<Project>>,
 }
 
@@ -53,7 +53,7 @@ impl ports::ProjectRepository for InMemoryProjectRepository {
             name: data.name.to_string(),
             created_at: now,
             updated_at: now,
-            is_active: false,
+            is_active: true,
             archived_at: None,
         };
 
