@@ -11,7 +11,7 @@ type Props = {
 export function ProjectCreateModal(props: Props) {
   const { opened, onClose, onSuccess } = props;
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<any>(null);
   const [name, setName] = useState("");
 
   const onSuccessRef = useRef(onSuccess);
@@ -31,7 +31,7 @@ export function ProjectCreateModal(props: Props) {
         setIsLoading(false);
       })
       .catch((error) => {
-        setError(true);
+        setError(error);
         console.error(error);
         setIsLoading(false);
       });
@@ -50,12 +50,13 @@ export function ProjectCreateModal(props: Props) {
             type="text"
             name="name"
             autoComplete="off"
+            autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
         </div>
         <div className="field__error">
-          {error && "Ooops! Some error happen. Check console for details"}
+          {error?.validation?.name?.[0].message}
         </div>
 
         <button
@@ -68,6 +69,10 @@ export function ProjectCreateModal(props: Props) {
         <button className="button" onClick={onClose} disabled={isLoading}>
           Cancel
         </button>
+
+        <div className="field__error">
+          {error?.unknown && (error.unknown?.description || "Unknown error")}
+        </div>
       </form>
     </Modal>
   );

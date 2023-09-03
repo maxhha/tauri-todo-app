@@ -27,7 +27,7 @@ export function Modal(props: Props) {
         return;
       }
 
-      if (ref.current?.contains(target)) {
+      if (ref.current?.contains(target) || ref.current === target) {
         return;
       }
 

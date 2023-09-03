@@ -1,6 +1,7 @@
 use anyhow::Result;
 use std::fmt::Debug;
 use std::sync::Arc;
+use validator::Validate;
 
 use crate::models::Project;
 use crate::ports::{CreateProjectData, ProjectRepository};
@@ -25,9 +26,10 @@ impl ProjectInteractor {
     }
 
     pub async fn create(&self, name: &str) -> Result<Project> {
-        self.project_repository
-            .create(CreateProjectData { name })
-            .await
+        let data = CreateProjectData { name };
+        data.validate()?;
+
+        self.project_repository.create(data).await
     }
 
     pub async fn list(&self) -> Result<Vec<Project>> {
