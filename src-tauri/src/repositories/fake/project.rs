@@ -67,7 +67,10 @@ impl ports::ProjectRepository for FakeProjectRepository {
 
     async fn get(&self, id: u64) -> Result<Option<models::Project>> {
         let projects = self.projects.read().await;
-        let item = projects.get(id as usize);
+        if id == 0 {
+            return Ok(None);
+        }
+        let item = projects.get((id - 1) as usize);
 
         Ok(item.cloned().map(Into::into))
     }
@@ -81,79 +84,8 @@ impl ports::ProjectRepository for FakeProjectRepository {
 
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashSet, sync::Arc};
-
     use super::*;
-    use crate::ports::{CreateProjectData, ProjectRepository};
+    use crate::project_repository_test;
 
-    #[tokio::test]
-    async fn create_project() {
-        let repo = FakeProjectRepository::new();
-        let name = "First project";
-
-        let result = repo
-            .create(CreateProjectData { name })
-            .await
-            .expect("Failed to create object");
-
-        assert_eq!(result.name, name);
-    }
-
-    #[tokio::test]
-    async fn create_returns_unique_ids() {
-        let repo = Arc::new(FakeProjectRepository::new());
-        let names = vec!["First project", "Second project", "Another project"];
-        let names_n = names.len();
-        let mut unique_ids = HashSet::<u64>::new();
-
-        let tasks = names
-            .into_iter()
-            .map(|name| {
-                let repo = repo.clone();
-                tokio::spawn(async move { repo.create(CreateProjectData { name }).await })
-            })
-            .collect::<Vec<_>>();
-
-        for task in tasks {
-            let r = task
-                .await
-                .expect("Failed to finish task")
-                .expect("Failed to create project");
-            unique_ids.insert(r.id);
-        }
-
-        assert_eq!(names_n, unique_ids.len());
-    }
-
-    #[tokio::test]
-    async fn get_by_id() {
-        let repo = FakeProjectRepository::new();
-        let project = repo
-            .create(CreateProjectData {
-                name: "Project in repository",
-            })
-            .await
-            .expect("Failed create project");
-
-        let project_from_repo = repo.get(project.id).await.expect("Failed to get project");
-
-        assert_eq!(project_from_repo, Some(project));
-    }
-
-    #[tokio::test]
-    async fn list_returns_all_projects() {
-        let repo = Arc::new(FakeProjectRepository::new());
-        let names = vec!["First", "Second", "Third"];
-
-        for name in names.iter() {
-            repo.create(CreateProjectData { name })
-                .await
-                .expect("Failed create project");
-        }
-
-        let projects = repo.list().await.expect("Failed list projects");
-        let project_names = projects.into_iter().map(|p| p.name).collect::<Vec<_>>();
-
-        assert_eq!(names, project_names);
-    }
+    project_repository_test! {FakeProjectRepository::new()}
 }
