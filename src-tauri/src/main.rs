@@ -73,7 +73,7 @@ async fn get_all_projects(state: tauri::State<'_, AppState>) -> Result<Vec<Proje
 }
 
 fn main() {
-    let project_repository = Arc::new(repositories::InMemoryProjectRepository::new());
+    let project_repository = Arc::new(repositories::fake::FakeProjectRepository::new());
 
     tauri::Builder::default()
         .manage(AppState {
