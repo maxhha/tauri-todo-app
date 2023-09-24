@@ -137,8 +137,37 @@ mod tests {
     use super::*;
     use crate::project_repository_test;
 
+    struct ScopeGuard<T, F, S>(scopeguard::ScopeGuard<T, F, S>)
+    where
+        T: ports::ProjectRepository,
+        F: FnOnce(T) + Send,
+        S: scopeguard::Strategy;
+
+    #[async_trait]
+    impl<T, F, S> ports::ProjectRepository for ScopeGuard<T, F, S>
+    where
+        T: ports::ProjectRepository,
+        F: FnOnce(T) + Send,
+        S: scopeguard::Strategy,
+    {
+        async fn create(&self, data: ports::CreateProjectData<'_>) -> Result<models::Project> {
+            self.0.create(data).await
+        }
+
+        async fn get(&self, id: u64) -> Result<Option<models::Project>> {
+            self.0.get(id).await
+        }
+
+        async fn list(&self) -> Result<Vec<models::Project>> {
+            self.0.list().await
+        }
+    }
+
     project_repository_test! {{
         let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tmp").join("Projects.bson");
-        ProjectRepository::new(path.to_str().expect("Invalid path"))
+        let repo = ProjectRepository::new(path.clone().to_str().expect("Invalid path"));
+        ScopeGuard(scopeguard::guard(repo, |_repo| {
+            std::fs::remove_file(path).expect("Failed to remove storage file");
+        }))
     }}
 }
