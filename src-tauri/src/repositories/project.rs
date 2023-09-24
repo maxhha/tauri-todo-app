@@ -1,7 +1,6 @@
 use std::io::Seek;
 use std::io::SeekFrom;
 use std::io::Write;
-use std::ops::Deref;
 use std::ops::DerefMut;
 
 use crate::models;
@@ -29,8 +28,59 @@ struct Project {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-struct ProjectStorageFile {
+struct ProjectFileStorageData {
     projects: Vec<Project>,
+}
+
+struct ProjectFileStorage {
+    data: ProjectFileStorageData,
+    f: std::fs::File,
+}
+
+impl ProjectFileStorage {
+    fn open_exclusive(path: &str) -> Result<Self> {
+        let f = std::fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .open(path)
+            .context(format!("Failed to open {}", path))?;
+
+        f.lock_exclusive().context("Failed to lock exclusive")?;
+        let mut f = scopeguard::guard(f, |f| {
+            let _ = f.unlock();
+        });
+
+        let data = if f.metadata().context("Failed to get metadata")?.len() == 0 {
+            ProjectFileStorageData {
+                projects: Vec::with_capacity(1),
+            }
+        } else {
+            bson::from_reader(f.deref_mut()).context("Failed to read document")?
+        };
+
+        let f = scopeguard::ScopeGuard::into_inner(f);
+
+        Ok(Self { data, f })
+    }
+
+    fn save(&mut self) -> Result<()> {
+        self.f
+            .seek(SeekFrom::Start(0))
+            .context("Failed to move cursor to start of file")?;
+
+        self.f
+            .write(&bson::to_vec(&self.data).context("Failed serialize storage")?)
+            .context("Failed to write storage")?;
+
+        Ok(())
+    }
+}
+
+impl Drop for ProjectFileStorage {
+    fn drop(&mut self) {
+        let _ = self.f.unlock();
+    }
 }
 
 impl Into<models::Project> for Project {
@@ -77,37 +127,13 @@ impl ports::ProjectRepository for ProjectRepository {
         let file_path = self.file_path.clone();
 
         unblock(move || {
-            let mut f = std::fs::OpenOptions::new()
-                .read(true)
-                .write(true)
-                .create(true)
-                .open(&file_path)
-                .context(format!("Failed to open {}", file_path))?;
+            let mut storage = ProjectFileStorage::open_exclusive(&file_path)
+                .context("Failed to open_exclusive storage")?;
 
-            f.lock_exclusive().context("Failed to lock exclusive")?;
-            let mut f = scopeguard::guard(&mut f, |f| {
-                let _ = f.unlock();
-            });
+            project.id = (storage.data.projects.len() as u64) + 1;
 
-            let mut storage = if f.metadata().context("Failed to get metadata")?.len() == 0 {
-                ProjectStorageFile {
-                    projects: Vec::with_capacity(1),
-                }
-            } else {
-                bson::from_reader(f.deref_mut()).context("Failed to read document")?
-            };
-
-            project.id = (storage.projects.len() as u64) + 1;
-
-            storage.projects.push(project.clone());
-
-            f.deref_mut()
-                .seek(SeekFrom::Start(0))
-                .context("Failed to move cursor to start of file")?;
-
-            f.deref_mut()
-                .write(&bson::to_vec(&storage).context("Failed serialize storage")?)
-                .context("Failed to write storage")?;
+            storage.data.projects.push(project.clone());
+            storage.save().context("Failed to save storage")?;
 
             Ok(project.into())
         })
