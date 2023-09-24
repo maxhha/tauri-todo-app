@@ -26,6 +26,7 @@ pub mod repository_tests {
             $crate::project_repository_test!($init, create_project);
             $crate::project_repository_test!($init, create_returns_unique_ids);
             $crate::project_repository_test!($init, get_by_id);
+            $crate::project_repository_test!($init, get_on_empty_repo);
             $crate::project_repository_test!($init, list_returns_all_projects);
         };
         ($init:expr, $name:ident) => {
@@ -86,6 +87,13 @@ pub mod repository_tests {
         let project_from_repo = repo.get(project.id).await.expect("Failed to get project");
 
         assert_eq!(project_from_repo, Some(project));
+    }
+
+    #[allow(dead_code)]
+    pub async fn get_on_empty_repo<R: ProjectRepository>(repo: Arc<R>) {
+        let project_from_repo = repo.get(1).await.expect("Failed to get object");
+
+        assert_eq!(project_from_repo, None);
     }
 
     #[allow(dead_code)]

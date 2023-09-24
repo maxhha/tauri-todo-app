@@ -65,10 +65,16 @@ impl ProjectFileStorage {
     }
 
     fn read_data(path: &str) -> Result<ProjectFileStorageData> {
-        let f = std::fs::OpenOptions::new()
-            .read(true)
-            .open(path)
-            .context(format!("Failed to open {}", path))?;
+        let f = std::fs::OpenOptions::new().read(true).open(path);
+        if f.as_ref()
+            .is_err_and(|x| x.kind() == std::io::ErrorKind::NotFound)
+        {
+            return Ok(ProjectFileStorageData {
+                projects: Vec::new(),
+            });
+        }
+
+        let f = f.context(format!("Failed to open {}", path))?;
 
         f.lock_shared().context("Failed to lock shared")?;
         let mut f = scopeguard::guard(f, |f| {
@@ -77,7 +83,7 @@ impl ProjectFileStorage {
 
         let data = if f.metadata().context("Failed to get metadata")?.len() == 0 {
             ProjectFileStorageData {
-                projects: Vec::with_capacity(1),
+                projects: Vec::new(),
             }
         } else {
             bson::from_reader(f.deref_mut()).context("Failed to read document")?
@@ -225,7 +231,7 @@ mod tests {
         let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tmp").join("Projects.bson");
         let repo = ProjectRepository::new(path.clone().to_str().expect("Invalid path"));
         ScopeGuard(scopeguard::guard(repo, |_repo| {
-            std::fs::remove_file(path).expect("Failed to remove storage file");
+            let _ = std::fs::remove_file(path);
         }))
     }}
 }
