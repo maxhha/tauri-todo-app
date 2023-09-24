@@ -18,12 +18,12 @@ use time::OffsetDateTime;
 struct Project {
     id: u64,
     name: String,
-    #[serde(with = "time::serde::timestamp")]
+    #[serde(with = "time::serde::iso8601")]
     pub created_at: OffsetDateTime,
-    #[serde(with = "time::serde::timestamp")]
+    #[serde(with = "time::serde::iso8601")]
     pub updated_at: OffsetDateTime,
     pub is_active: bool,
-    #[serde(with = "time::serde::timestamp::option")]
+    #[serde(with = "time::serde::iso8601::option")]
     archived_at: Option<OffsetDateTime>,
 }
 
@@ -62,6 +62,28 @@ impl ProjectFileStorage {
         let f = scopeguard::ScopeGuard::into_inner(f);
 
         Ok(Self { data, f })
+    }
+
+    fn read_data(path: &str) -> Result<ProjectFileStorageData> {
+        let f = std::fs::OpenOptions::new()
+            .read(true)
+            .open(path)
+            .context(format!("Failed to open {}", path))?;
+
+        f.lock_shared().context("Failed to lock shared")?;
+        let mut f = scopeguard::guard(f, |f| {
+            let _ = f.unlock();
+        });
+
+        let data = if f.metadata().context("Failed to get metadata")?.len() == 0 {
+            ProjectFileStorageData {
+                projects: Vec::with_capacity(1),
+            }
+        } else {
+            bson::from_reader(f.deref_mut()).context("Failed to read document")?
+        };
+
+        Ok(data)
     }
 
     fn save(&mut self) -> Result<()> {
@@ -141,20 +163,30 @@ impl ports::ProjectRepository for ProjectRepository {
     }
 
     async fn get(&self, id: u64) -> Result<Option<models::Project>> {
-        panic!("ProjectRepository::get not implemented");
+        if id == 0 {
+            return Ok(None);
+        }
+        let file_path = self.file_path.clone();
 
-        // let projects = self.projects.read().await;
-        // let item = projects.get(id as usize);
+        let data: ProjectFileStorageData = unblock(move || {
+            ProjectFileStorage::read_data(&file_path).context("Failed to open_shared storage")
+        })
+        .await?;
 
-        // Ok(item.cloned().map(Into::into))
+        let item = data.projects.get((id - 1) as usize);
+
+        Ok(item.cloned().map(Into::into))
     }
 
     async fn list(&self) -> Result<Vec<models::Project>> {
-        panic!("ProjectRepository::list not implemented");
+        let file_path = self.file_path.clone();
 
-        // let projects = self.projects.read().await;
+        let data: ProjectFileStorageData = unblock(move || {
+            ProjectFileStorage::read_data(&file_path).context("Failed to open_shared storage")
+        })
+        .await?;
 
-        // Ok(projects.iter().cloned().map(Into::into).collect())
+        Ok(data.projects.iter().cloned().map(Into::into).collect())
     }
 }
 
