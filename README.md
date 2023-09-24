@@ -4,8 +4,8 @@ This is simple TODO app written on [Tauri](https://tauri.app) + [React](https://
 
 ## Plan
 
-- [ ] Create projects
-- [ ] Show projects
+- [x] Create projects
+- [x] Show projects
 - [ ] Open project
 - [ ] Create group
 - [ ] Show groups
@@ -30,7 +30,7 @@ erDiagram
     PROJECT {
         int id PK
         text name
-        date created_at 
+        date created_at
         date updated_at "denormalization of max updated_at in TodoItem"
         bool is_active
         date archived_at

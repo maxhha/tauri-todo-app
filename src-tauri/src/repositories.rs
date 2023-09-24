@@ -1,2 +1,2 @@
 pub mod fake;
-mod project;
+pub mod project;

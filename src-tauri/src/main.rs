@@ -1,15 +1,16 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-#[macro_use(defer)]
+// #[macro_use(defer)]
 extern crate scopeguard;
 
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc};
 
+use anyhow::Context;
 use interactors::ProjectInteractor;
 use models::Project;
 use serde::ser::SerializeMap;
-use tauri::App;
+use tauri::Manager;
 
 mod interactors;
 mod models;
@@ -76,11 +77,29 @@ async fn get_all_projects(state: tauri::State<'_, AppState>) -> Result<Vec<Proje
 }
 
 fn main() {
-    let project_repository = Arc::new(repositories::fake::FakeProjectRepository::new());
-
     tauri::Builder::default()
-        .manage(AppState {
-            project_interactor: ProjectInteractor::new(project_repository),
+        .setup(|app| {
+            let app_data_dir = app
+                .path_resolver()
+                .app_data_dir()
+                .unwrap_or_else(|| PathBuf::from(".").join("data"));
+
+            std::fs::create_dir_all(&app_data_dir).context(format!(
+                "Failed to create app_data_dir {}",
+                app_data_dir.display()
+            ))?;
+
+            // TODO: починить создание второго проекта
+
+            let project_repository = Arc::new(repositories::project::ProjectRepository::new(
+                &app_data_dir.join("Projects.bson"),
+            ));
+
+            app.manage(AppState {
+                project_interactor: ProjectInteractor::new(project_repository),
+            });
+
+            Ok(())
         })
         .invoke_handler(tauri::generate_handler![create_project, get_all_projects])
         .run(tauri::generate_context!())

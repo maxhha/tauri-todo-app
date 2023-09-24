@@ -2,6 +2,7 @@ use std::io::Seek;
 use std::io::SeekFrom;
 use std::io::Write;
 use std::ops::DerefMut;
+use std::path::Path;
 
 use crate::models;
 use crate::ports;
@@ -38,13 +39,13 @@ struct ProjectFileStorage {
 }
 
 impl ProjectFileStorage {
-    fn open_exclusive(path: &str) -> Result<Self> {
+    fn open_exclusive(path: &Path) -> Result<Self> {
         let f = std::fs::OpenOptions::new()
             .read(true)
             .write(true)
             .create(true)
             .open(path)
-            .context(format!("Failed to open {}", path))?;
+            .context(format!("Failed to open {}", path.display()))?;
 
         f.lock_exclusive().context("Failed to lock exclusive")?;
         let mut f = scopeguard::guard(f, |f| {
@@ -64,7 +65,7 @@ impl ProjectFileStorage {
         Ok(Self { data, f })
     }
 
-    fn read_data(path: &str) -> Result<ProjectFileStorageData> {
+    fn read_data(path: &Path) -> Result<ProjectFileStorageData> {
         let f = std::fs::OpenOptions::new().read(true).open(path);
         if f.as_ref()
             .is_err_and(|x| x.kind() == std::io::ErrorKind::NotFound)
@@ -74,7 +75,7 @@ impl ProjectFileStorage {
             });
         }
 
-        let f = f.context(format!("Failed to open {}", path))?;
+        let f = f.context(format!("Failed to open {}", path.display()))?;
 
         f.lock_shared().context("Failed to lock shared")?;
         let mut f = scopeguard::guard(f, |f| {
@@ -125,16 +126,16 @@ impl Into<models::Project> for Project {
 }
 
 pub struct ProjectRepository {
-    file_path: String,
+    file_path: std::path::PathBuf,
 }
 
 impl IsSync for ProjectRepository {}
 impl IsSend for ProjectRepository {}
 
 impl ProjectRepository {
-    pub fn new(file_path: &str) -> Self {
+    pub fn new(file_path: &Path) -> Self {
         ProjectRepository {
-            file_path: file_path.to_string(),
+            file_path: std::path::PathBuf::from(file_path),
         }
     }
 }
@@ -229,7 +230,7 @@ mod tests {
 
     project_repository_test! {{
         let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tmp").join("Projects.bson");
-        let repo = ProjectRepository::new(path.clone().to_str().expect("Invalid path"));
+        let repo = ProjectRepository::new(&path);
         ScopeGuard(scopeguard::guard(repo, |_repo| {
             let _ = std::fs::remove_file(path);
         }))
