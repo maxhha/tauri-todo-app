@@ -1,7 +1,9 @@
 import { invoke } from "@tauri-apps/api/tauri";
 import { useCallback, useEffect, useRef, useState } from "react";
 import formatDistanceToNow from "date-fns/formatDistanceToNow";
+import { Link } from "react-router-dom";
 import ProjectCreateModal from "../../components/ProjectCreateModal";
+import s from "./Projects.module.css";
 
 type OffsetDateTime = string;
 
@@ -65,14 +67,16 @@ export function ProjectsPage() {
         />
       )}
 
-      <ul className="projects">
+      <ul className={s.projects}>
         {projects.map((project) => (
-          <li className="project" tabIndex={0} key={project.id}>
-            <span className="project__name">{project.name}</span>{" "}
-            <span className="project__id">#{project.id}</span>{" "}
-            <span className="project__last-update">
-              -- {formatDistanceToNow(new Date(project.updated_at))}
-            </span>
+          <li className={s.projects__item} key={project.id}>
+            <Link to={`/${project.id}`} className={s.project}>
+              <span className={s.project__name}>{project.name}</span>{" "}
+              <span className={s.project__id}>#{project.id}</span>{" "}
+              <span className={s.project__lastUpdate}>
+                -- {formatDistanceToNow(new Date(project.updated_at))}
+              </span>
+            </Link>
           </li>
         ))}
       </ul>

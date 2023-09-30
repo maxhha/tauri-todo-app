@@ -1,0 +1,37 @@
+.projects {
+    padding-inline: 0
+}
+
+.projects__item {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.project {
+    color: #0f0f0f;
+    cursor: pointer;
+    transition: .2s ease-in;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+}
+
+.project:hover,
+.project:focus {
+    text-decoration-color: #aaa;
+    outline: none;
+}
+
+.project__id {
+    color: #aaa;
+}
+
+.project__lastUpdate {
+    opacity: 0;
+    color: #aaa;
+    transition: .2s ease-in;
+}
+
+.project:hover .project__lastUpdate,
+.project:focus .project__lastUpdate {
+    opacity: 1;
+}

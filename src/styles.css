@@ -61,39 +61,6 @@
   margin-left: 1rem;
 }
 
-.projects {
-  padding-inline: 0
-}
-
-.project {
-  list-style-type: none;
-  cursor: pointer;
-  padding-left: 0;
-  transition: .2s ease-in;
-  text-decoration: underline;
-  text-decoration-color: transparent;
-}
-
-.project:hover, .project:focus {
-  text-decoration-color: #aaa;
-  outline: none;
-}
-
-.project__id {
-  color: #aaa;
-}
-
-.project__last-update {
-  opacity: 0;
-  color: #aaa;
-  transition: .2s ease-in;
-}
-
-.project:hover .project__last-update,
-.project:focus .project__last-update {
-  opacity: 1;
-}
-
 .field_row {
   display: flex;
   flex-direction: row;
