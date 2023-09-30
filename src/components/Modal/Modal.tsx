@@ -44,7 +44,7 @@ export function Modal(props: Props) {
     window.addEventListener("keydown", handleEscape);
 
     return () => {
-      window.removeEventListener("click", handleClickOutside);
+      window.removeEventListener("mousedown", handleClickOutside);
       window.removeEventListener("keydown", handleEscape);
     };
   }, [opened]);
