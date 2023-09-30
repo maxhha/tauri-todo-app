@@ -1,8 +1,7 @@
 import { invoke } from "@tauri-apps/api/tauri";
-import "./App.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 import formatDistanceToNow from "date-fns/formatDistanceToNow";
-import ProjectCreateModal from "./components/ProjectCreateModal";
+import ProjectCreateModal from "../../components/ProjectCreateModal";
 
 type OffsetDateTime = string;
 
@@ -15,7 +14,7 @@ type Project = {
   archived_at: OffsetDateTime | null;
 };
 
-function App() {
+export function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const isLoadingRef = useRef(false);
@@ -80,5 +79,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
