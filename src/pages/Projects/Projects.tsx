@@ -4,6 +4,7 @@ import formatDistanceToNow from "date-fns/formatDistanceToNow";
 import { Link } from "react-router-dom";
 import ProjectCreateModal from "../../components/ProjectCreateModal";
 import s from "./Projects.module.css";
+import WindowTitle from "../../components/WindowTitle";
 
 type OffsetDateTime = string;
 
@@ -54,6 +55,7 @@ export function ProjectsPage() {
 
   return (
     <div className="page">
+      <WindowTitle title="Projects" />
       <h1 className="page__header">Projects</h1>
       <button className="button button_primary" onClick={handleAddNew}>
         +New
