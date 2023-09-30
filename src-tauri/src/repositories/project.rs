@@ -193,7 +193,13 @@ impl ports::ProjectRepository for ProjectRepository {
         })
         .await?;
 
-        Ok(data.projects.iter().cloned().map(Into::into).collect())
+        Ok(data
+            .projects
+            .iter()
+            .rev()
+            .cloned()
+            .map(Into::into)
+            .collect())
     }
 }
 
