@@ -89,8 +89,6 @@ fn main() {
                 app_data_dir.display()
             ))?;
 
-            // TODO: починить создание второго проекта
-
             let project_repository = Arc::new(repositories::project::ProjectRepository::new(
                 &app_data_dir.join("Projects.bson"),
             ));
