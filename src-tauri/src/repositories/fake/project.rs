@@ -1,7 +1,7 @@
 use crate::models;
 use crate::ports;
+use crate::result::Result;
 use crate::utils::{IsSend, IsSync};
-use anyhow::Result;
 use async_trait::async_trait;
 use tauri::async_runtime::RwLock;
 use time::OffsetDateTime;

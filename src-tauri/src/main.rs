@@ -9,49 +9,16 @@ use std::{path::PathBuf, sync::Arc};
 use anyhow::Context;
 use interactors::ProjectInteractor;
 use models::Project;
-use serde::ser::SerializeMap;
 use tauri::Manager;
 
 mod interactors;
 mod models;
 mod ports;
 mod repositories;
+mod result;
 mod utils;
 
-enum AppError {
-    Validation(validator::ValidationErrors),
-    Unknown(serde_error::Error),
-}
-
-impl From<anyhow::Error> for AppError {
-    fn from(error: anyhow::Error) -> AppError {
-        if error.is::<validator::ValidationErrors>() {
-            return AppError::Validation(error.downcast().expect("downcast error failed"));
-        }
-
-        AppError::Unknown(serde_error::Error::new(&*error))
-    }
-}
-
-impl serde::Serialize for AppError {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let mut map = serializer.serialize_map(Some(1))?;
-        match self {
-            AppError::Validation(errors) => {
-                map.serialize_entry("validation", errors)?;
-            }
-            AppError::Unknown(error) => {
-                map.serialize_entry("unknown", error)?;
-            }
-        };
-        map.end()
-    }
-}
-
-type Result<T> = core::result::Result<T, AppError>;
+use result::Result;
 
 #[derive(Debug)]
 pub struct AppState {
@@ -60,20 +27,12 @@ pub struct AppState {
 
 #[tauri::command]
 async fn create_project(name: &str, state: tauri::State<'_, AppState>) -> Result<Project> {
-    state
-        .project_interactor
-        .create(name)
-        .await
-        .map_err(AppError::from)
+    state.project_interactor.create(name).await
 }
 
 #[tauri::command]
 async fn get_all_projects(state: tauri::State<'_, AppState>) -> Result<Vec<Project>> {
-    state
-        .project_interactor
-        .list()
-        .await
-        .map_err(AppError::from)
+    state.project_interactor.list().await
 }
 
 fn main() {
@@ -89,7 +48,7 @@ fn main() {
                 app_data_dir.display()
             ))?;
 
-            let project_repository = Arc::new(repositories::project::ProjectRepository::new(
+            let project_repository = Arc::new(repositories::ProjectRepository::new(
                 &app_data_dir.join("Projects.bson"),
             ));
 

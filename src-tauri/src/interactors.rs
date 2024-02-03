@@ -1,10 +1,10 @@
-use anyhow::Result;
 use std::fmt::Debug;
 use std::sync::Arc;
 use validator::Validate;
 
 use crate::models::Project;
 use crate::ports::{CreateProjectData, ProjectRepository};
+use crate::result::Result;
 use crate::utils::{IsSend, IsSync};
 
 pub struct ProjectInteractor {

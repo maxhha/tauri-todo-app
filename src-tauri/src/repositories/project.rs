@@ -1,18 +1,17 @@
-use std::io::Seek;
-use std::io::SeekFrom;
-use std::io::Write;
+use std::io::{Seek, SeekFrom, Write};
 use std::ops::DerefMut;
 use std::path::Path;
 
 use crate::models;
 use crate::ports;
+use crate::result::Result;
 use crate::utils::{IsSend, IsSync};
 use anyhow::Context;
-use anyhow::Result;
 use async_trait::async_trait;
 use blocking::unblock;
 use fs4::FileExt;
 use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
 use time::OffsetDateTime;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -208,37 +207,38 @@ mod tests {
     use super::*;
     use crate::project_repository_test;
 
-    struct ScopeGuard<T, F, S>(scopeguard::ScopeGuard<T, F, S>)
-    where
-        T: ports::ProjectRepository,
-        F: FnOnce(T) + Send,
-        S: scopeguard::Strategy;
+    struct ProjectRepositoryTest {
+        repo: ProjectRepository,
+        path: std::path::PathBuf,
+    }
+
+    impl Drop for ProjectRepositoryTest {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_file(&self.path);
+        }
+    }
 
     #[async_trait]
-    impl<T, F, S> ports::ProjectRepository for ScopeGuard<T, F, S>
-    where
-        T: ports::ProjectRepository,
-        F: FnOnce(T) + Send,
-        S: scopeguard::Strategy,
-    {
+    impl ports::ProjectRepository for ProjectRepositoryTest {
         async fn create(&self, data: ports::CreateProjectData<'_>) -> Result<models::Project> {
-            self.0.create(data).await
+            self.repo.create(data).await
         }
 
         async fn get(&self, id: u64) -> Result<Option<models::Project>> {
-            self.0.get(id).await
+            self.repo.get(id).await
         }
 
         async fn list(&self) -> Result<Vec<models::Project>> {
-            self.0.list().await
+            self.repo.list().await
         }
     }
 
     project_repository_test! {{
-        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tmp").join("Projects.bson");
-        let repo = ProjectRepository::new(&path);
-        ScopeGuard(scopeguard::guard(repo, |_repo| {
-            let _ = std::fs::remove_file(path);
-        }))
+        let name = format!("test_Projects_{}.bson", rand::random::<u32>());
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tmp").join(name);
+        ProjectRepositoryTest {
+            repo: ProjectRepository::new(&path),
+            path,
+        }
     }}
 }

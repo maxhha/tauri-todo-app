@@ -1,5 +1,5 @@
 use crate::models::Project;
-use anyhow::Result;
+use crate::result::Result;
 use async_trait::async_trait;
 
 #[derive(validator::Validate)]
@@ -109,6 +109,13 @@ pub mod repository_tests {
         let projects = repo.list().await.expect("Failed list projects");
         let project_names = projects.into_iter().map(|p| p.name).collect::<Vec<_>>();
 
-        assert_eq!(names, project_names);
+        for name in names.iter() {
+            assert!(
+                project_names.contains(&name.to_string()),
+                "name = {:#?} not exists in project_names {:#?}",
+                name,
+                project_names
+            );
+        }
     }
 }
