@@ -1,0 +1,22 @@
+
+.group {
+    border: 2px solid #aaa;
+    padding: 8px;
+}
+
+.group + .group {
+    margin-top: -2px;
+}
+
+.group__header {
+    display: flex;
+    align-items: center;
+}
+
+.group__open {
+    margin-right: 16px;
+}
+
+.group__content_hidden {
+    display: none;
+}
