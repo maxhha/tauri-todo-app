@@ -6,7 +6,7 @@ This is simple TODO app written on [Tauri](https://tauri.app) + [React](https://
 
 - [x] Create projects
 - [x] Show projects
-- [ ] Open project
+- [x] Open project
 - [ ] Create group
 - [ ] Show groups
 - [ ] Create item
