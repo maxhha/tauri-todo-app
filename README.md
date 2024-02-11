@@ -21,6 +21,7 @@ This is simple TODO app written on [Tauri](https://tauri.app) + [React](https://
 - [ ] Update project
 - [ ] Archive project
 - [ ] Configure default project groups
+- *[ ] Edit content of todos in json (for replace or smth)
 
 ## Models
 

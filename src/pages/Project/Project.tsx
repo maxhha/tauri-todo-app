@@ -109,10 +109,26 @@ export function ProjectPage() {
                     <div className={s.todo__updatedAt}>{todo.updatedAt}</div>
                   </div>
                 </li>
-              )) || <div className={s.contentPlaceholder}>no data</div>}
+              )) || (
+                <div
+                  className={classNames(s.group__item, s.contentPlaceholder)}
+                >
+                  no data
+                </div>
+              )}
+              <li className={classNames(s.group__item, s.group__item_add)}>
+                <button className="button button_small button_primary">
+                  + Todo
+                </button>
+              </li>
             </ol>
           </li>
         ))}
+        <div className={classNames(s.group, s.groupAdd)}>
+          <button className="button button_small button_primary">
+            + Group
+          </button>
+        </div>
       </ol>
     </div>
   );
