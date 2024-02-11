@@ -1,4 +1,4 @@
-use crate::models::Project;
+use crate::models::{Group, Project};
 use crate::result::Result;
 use async_trait::async_trait;
 
@@ -15,6 +15,18 @@ pub trait ProjectRepository: Sync + Send {
     async fn list(&self) -> Result<Vec<Project>>;
 }
 
+pub struct CreateGroupData<'a> {
+    pub name: &'a str,
+    pub project_id: u64,
+}
+
+#[async_trait]
+pub trait GroupRepository: Sync + Send {
+    async fn create(&self, group: CreateGroupData<'_>) -> Result<Group>;
+    // async fn find_by_project(&self, project_id: u64) -> Result<Vec<Group>>;
+}
+
+#[cfg(test)]
 pub mod repository_tests {
     use std::{collections::HashSet, sync::Arc};
 
@@ -23,11 +35,11 @@ pub mod repository_tests {
     #[macro_export]
     macro_rules! project_repository_test {
         ($init:expr) => {
-            $crate::project_repository_test!($init, create_project);
-            $crate::project_repository_test!($init, create_returns_unique_ids);
-            $crate::project_repository_test!($init, get_by_id);
-            $crate::project_repository_test!($init, get_on_empty_repo);
-            $crate::project_repository_test!($init, list_returns_all_projects);
+            $crate::project_repository_test!($init, project_repo_create_one);
+            $crate::project_repository_test!($init, project_repo_create_returns_unique_ids);
+            $crate::project_repository_test!($init, project_repo_get_one);
+            $crate::project_repository_test!($init, project_repo_get_from_empty);
+            $crate::project_repository_test!($init, project_repo_list_returns_all);
         };
         ($init:expr, $name:ident) => {
             #[tokio::test]
@@ -39,7 +51,7 @@ pub mod repository_tests {
     }
 
     #[allow(dead_code)]
-    pub async fn create_project<R: ProjectRepository>(repo: Arc<R>) {
+    pub async fn project_repo_create_one<R: ProjectRepository>(repo: Arc<R>) {
         let name = "First project";
 
         let result = repo
@@ -51,7 +63,9 @@ pub mod repository_tests {
     }
 
     #[allow(dead_code)]
-    pub async fn create_returns_unique_ids<R: ProjectRepository + 'static>(repo: Arc<R>) {
+    pub async fn project_repo_create_returns_unique_ids<R: ProjectRepository + 'static>(
+        repo: Arc<R>,
+    ) {
         let names = vec!["First project", "Second project", "Another project"];
         let names_n = names.len();
         let mut unique_ids = HashSet::<u64>::new();
@@ -76,7 +90,7 @@ pub mod repository_tests {
     }
 
     #[allow(dead_code)]
-    pub async fn get_by_id<R: ProjectRepository>(repo: Arc<R>) {
+    pub async fn project_repo_get_one<R: ProjectRepository>(repo: Arc<R>) {
         let project = repo
             .create(CreateProjectData {
                 name: "Project in repository",
@@ -90,14 +104,14 @@ pub mod repository_tests {
     }
 
     #[allow(dead_code)]
-    pub async fn get_on_empty_repo<R: ProjectRepository>(repo: Arc<R>) {
+    pub async fn project_repo_get_from_empty<R: ProjectRepository>(repo: Arc<R>) {
         let project_from_repo = repo.get(1).await.expect("Failed to get object");
 
         assert_eq!(project_from_repo, None);
     }
 
     #[allow(dead_code)]
-    pub async fn list_returns_all_projects<R: ProjectRepository>(repo: Arc<R>) {
+    pub async fn project_repo_list_returns_all<R: ProjectRepository>(repo: Arc<R>) {
         let names = vec!["First", "Second", "Third"];
 
         for name in names.iter() {
@@ -117,5 +131,33 @@ pub mod repository_tests {
                 project_names
             );
         }
+    }
+
+    #[macro_export]
+    macro_rules! group_repository_test {
+        ($init:expr) => {
+            $crate::group_repository_test!($init, group_repo_create_one);
+        };
+        ($init:expr, $name:ident) => {
+            #[tokio::test]
+            async fn $name() {
+                let repo = std::sync::Arc::new($init);
+                $crate::ports::repository_tests::$name(repo).await;
+            }
+        };
+    }
+
+    #[allow(dead_code)]
+    pub async fn group_repo_create_one<R: GroupRepository>(repo: Arc<R>) {
+        let name = "First group";
+        let project_id = 12;
+
+        let result = repo
+            .create(CreateGroupData { name, project_id })
+            .await
+            .expect("Failed to create object");
+
+        assert_eq!(result.name, name);
+        assert_eq!(result.project_id, project_id);
     }
 }
