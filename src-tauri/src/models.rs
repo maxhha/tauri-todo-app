@@ -13,6 +13,15 @@ pub struct Project {
     pub archived_at: Option<OffsetDateTime>,
 }
 
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+pub struct Group {
+    pub id: u64,
+    pub name: String,
+    pub position: u64,
+    pub is_opened: bool,
+    pub project_id: u64,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -32,5 +41,19 @@ mod tests {
         let j = serde_json::to_string(&project).expect("Project serialization");
 
         assert_eq!(j, "{\"id\":123,\"name\":\"First project\",\"created_at\":\"+002019-01-02T12:34:56.123000000Z\",\"updated_at\":\"+002020-01-02T12:34:56.123000000Z\",\"is_active\":true,\"archived_at\":\"+002021-01-02T12:34:56.123000000Z\"}");
+    }
+
+    #[test]
+    fn serialize_group() {
+        let group = Group {
+            id: 123,
+            name: "First group".into(),
+            position: 0,
+            is_opened: true,
+            project_id: 12,
+        };
+
+        let j = serde_json::to_string(&group).expect("Group serialization");
+        assert_eq!(j, "{\"id\":123,\"name\":\"First group\",\"position\":0,\"is_opened\":true,\"project_id\":12}");
     }
 }
